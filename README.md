@@ -172,7 +172,7 @@ npx prisma migrate dev          # aplica las migraciones
 npm run prisma:seed             # crea admin y 3 bodegas demo
 ```
 
-El seed crea `admin@bodegascore.ai` / `Admin123!` (¡cámbialo en producción!).
+El seed crea `admin@bodegascore.ai` / `Admin123!`
 
 Ejecutar la API:
 
