@@ -1,0 +1,34 @@
+databases:
+  - name: bodegascore-db
+    plan: free
+    version: 16
+    databaseName: bodegascore
+    user: bodegascore
+
+services:
+  - type: web
+    name: bodegascore-api
+    runtime: docker
+    plan: free
+    repo: https://github.com/Jean-AT/ScoreCredit
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bodegascore-db
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: RATE_LIMIT_WINDOW_MS
+        value: '900000'
+      - key: RATE_LIMIT_MAX
+        value: '100'
+      - key: AUTH_RATE_LIMIT_MAX
+        value: '10'

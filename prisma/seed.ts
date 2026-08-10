@@ -4,10 +4,11 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main(): Promise<void> {
-  const adminEmail = 'admin@bodegascore.ai'
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@bodegascore.ai'
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'Admin123!'
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } })
   if (!existing) {
-    const passwordHash = await bcrypt.hash('Admin123!', 12)
+    const passwordHash = await bcrypt.hash(adminPassword, 12)
     await prisma.user.create({
       data: { email: adminEmail, passwordHash, role: 'ADMIN' },
     })

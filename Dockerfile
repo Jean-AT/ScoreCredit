@@ -36,6 +36,6 @@ USER node
 EXPOSE 3000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
-  CMD wget -q -O - http://localhost:3000/healthz || exit 1
+  CMD sh -c "wget -q -O - http://localhost:${PORT:-3000}/healthz || exit 1"
 
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
