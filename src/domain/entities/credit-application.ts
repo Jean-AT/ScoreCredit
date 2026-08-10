@@ -7,13 +7,9 @@ export const APPROVAL_SCORE_THRESHOLD = 60
 export const REASONING_MAX_LENGTH = 2000
 export const YEARS_IN_BUSINESS_MIN = 0
 
-export type CreditApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+export const CREDIT_APPLICATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const
 
-export const CREDIT_APPLICATION_STATUSES: readonly CreditApplicationStatus[] = [
-  'PENDING',
-  'APPROVED',
-  'REJECTED',
-]
+export type CreditApplicationStatus = (typeof CREDIT_APPLICATION_STATUSES)[number]
 
 export interface CreateCreditApplicationInput {
   merchant: MerchantSnapshot
