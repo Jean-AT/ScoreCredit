@@ -1,7 +1,6 @@
 databases:
   - name: bodegascore-db
     plan: free
-    version: 16
     databaseName: bodegascore
     user: bodegascore
 
