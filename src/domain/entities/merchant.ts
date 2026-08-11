@@ -9,6 +9,7 @@ export interface MerchantSnapshot {
   businessType: string
   monthlyRevenue: number
   yearsInBusiness: number
+  ownerId: string | null
 }
 
 export interface CreateMerchantInput {
@@ -17,4 +18,11 @@ export interface CreateMerchantInput {
   businessType: string
   monthlyRevenue: number
   yearsInBusiness: number
+}
+
+export interface UpdateMerchantInput {
+  name?: string
+  businessType?: string
+  monthlyRevenue?: number
+  yearsInBusiness?: number
 }

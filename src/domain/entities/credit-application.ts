@@ -71,6 +71,26 @@ export class MerchantValidation {
     MerchantValidation.validateMonthlyRevenue(merchant.monthlyRevenue)
     MerchantValidation.validateYearsInBusiness(merchant.yearsInBusiness)
   }
+
+  static validateUpdate(input: {
+    name?: string
+    businessType?: string
+    monthlyRevenue?: number
+    yearsInBusiness?: number
+  }): void {
+    if (input.name !== undefined) {
+      MerchantValidation.validateName(input.name)
+    }
+    if (input.businessType !== undefined) {
+      MerchantValidation.validateBusinessType(input.businessType)
+    }
+    if (input.monthlyRevenue !== undefined) {
+      MerchantValidation.validateMonthlyRevenue(input.monthlyRevenue)
+    }
+    if (input.yearsInBusiness !== undefined) {
+      MerchantValidation.validateYearsInBusiness(input.yearsInBusiness)
+    }
+  }
 }
 
 export class CreditApplication {

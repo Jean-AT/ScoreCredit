@@ -32,22 +32,33 @@ export class PrismaCreditApplicationRepository implements CreditApplicationRepos
   }
 
   async findById(id: string): Promise<CreditApplicationRecord | null> {
-    const application = await prisma.creditApplication.findUnique({ where: { id } })
-    return application ? this.map(application) : null
+    const application = await prisma.creditApplication.findUnique({
+      where: { id },
+      include: { merchant: { select: { ownerId: true } } },
+    })
+    if (!application) {
+      return null
+    }
+    return this.map(application, application.merchant.ownerId)
   }
 
   async list(query?: CreditApplicationListQuery): Promise<CreditApplicationRecord[]> {
     const applications = await prisma.creditApplication.findMany({
-      where: query?.status ? { status: query.status } : undefined,
+      where: {
+        status: query?.status ?? undefined,
+        merchant: query?.ownerId ? { ownerId: query.ownerId } : undefined,
+      },
+      include: { merchant: { select: { ownerId: true } } },
       orderBy: { createdAt: 'desc' },
     })
-    return applications.map((a) => this.map(a))
+    return applications.map((a) => this.map(a, a.merchant.ownerId))
   }
 
-  private map(application: PrismaApplication): CreditApplicationRecord {
+  private map(application: PrismaApplication, merchantOwnerId?: string | null): CreditApplicationRecord {
     return {
       id: application.id,
       merchantId: application.merchantId,
+      merchantOwnerId: merchantOwnerId ?? null,
       requestedAmount: Number(application.requestedAmount),
       score: application.score,
       status: application.status,

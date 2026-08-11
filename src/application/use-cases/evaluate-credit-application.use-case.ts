@@ -4,10 +4,12 @@ import type { CreditApplicationRepository } from '../../domain/repositories/cred
 import type { CreditApplicationRecord } from '../../domain/repositories/credit-application-repository.js'
 import type { IAIScoringService } from '../services/i-ai-scoring.service.js'
 import { NotFoundError } from '../../shared/errors/domain-error.js'
+import { ForbiddenError } from '../../shared/errors/http-error.js'
 
 export interface EvaluateCreditApplicationInput {
   merchantId: string
   requestedAmount: number
+  ownerId?: string
 }
 
 export interface EvaluateCreditApplicationUseCase {
@@ -25,6 +27,9 @@ export class EvaluateCreditApplicationUseCaseImpl implements EvaluateCreditAppli
     const merchant = await this.merchantRepository.findById(input.merchantId)
     if (!merchant) {
       throw new NotFoundError('Merchant not found')
+    }
+    if (input.ownerId && merchant.ownerId !== input.ownerId) {
+      throw new ForbiddenError('You can only evaluate your own merchant')
     }
 
     const application = CreditApplication.create({

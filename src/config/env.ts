@@ -9,6 +9,7 @@ const envSchema = z.object({
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default('1h'),
+  CORS_ORIGIN: z.string().default('*'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900_000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
