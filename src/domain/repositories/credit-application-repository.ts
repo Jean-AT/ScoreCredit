@@ -4,6 +4,7 @@ import type { CreditApplicationEvaluation } from '../entities/credit-application
 export interface CreditApplicationRecord {
   id: string
   merchantId: string
+  merchantOwnerId: string | null
   requestedAmount: number
   score: number | null
   status: CreditApplicationStatus
@@ -14,6 +15,7 @@ export interface CreditApplicationRecord {
 
 export interface CreditApplicationListQuery {
   status?: CreditApplicationStatus
+  ownerId?: string
 }
 
 export interface CreditApplicationRepository {

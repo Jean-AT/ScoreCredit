@@ -9,6 +9,7 @@ const app = createApp()
 const adminEmail = 'admin@bodegascore.ai'
 const adminPassword = 'Admin123!'
 const phonePrefix = `+519${Date.now().toString().slice(-7)}`
+const userEmailPrefix = `e2e_${Date.now().toString().slice(-7)}`
 
 async function upsertAdmin(): Promise<void> {
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } })
@@ -220,10 +221,165 @@ describe('Rate limiter', () => {
   })
 })
 
+describe('POST /api/v1/auth/register', () => {
+  it('creates a MERCHANT user and returns a JWT', async () => {
+    const email = `${userEmailPrefix}_1@test.com`
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email, password: 'StrongPass123' })
+    expect(res.status).toBe(201)
+    expect(res.body.token).toBeTypeOf('string')
+    expect(res.body.user.role).toBe('MERCHANT')
+    expect(res.body.user.email).toBe(email)
+  })
+
+  it('rejects a duplicate email with 400', async () => {
+    const email = `${userEmailPrefix}_2@test.com`
+    await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email, password: 'StrongPass123' })
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email, password: 'OtherPass456' })
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('DOMAIN_ERROR')
+  })
+
+  it('rejects a short password with 400', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: `${userEmailPrefix}_3@test.com`, password: 'short' })
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
+})
+
+describe('Merchant user flow (MERCHANT role)', () => {
+  let token: string
+  let otherMerchantId: string
+  let myMerchantId: string
+
+  beforeAll(async () => {
+    const register = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: `${userEmailPrefix}_flow@test.com`, password: 'StrongPass123' })
+    token = register.body.token as string
+
+    const mine = await request(app)
+      .post('/api/v1/merchants')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Mi Bodega',
+        phone: `${phonePrefix}03`,
+        businessType: 'ABARROTES',
+        monthlyRevenue: 15000,
+        yearsInBusiness: 5,
+      })
+    myMerchantId = mine.body.id as string
+
+    const other = await request(app)
+      .post('/api/v1/merchants')
+      .send({
+        name: 'Bodega Ajena',
+        phone: `${phonePrefix}04`,
+        businessType: 'BODEGA',
+        monthlyRevenue: 9000,
+        yearsInBusiness: 2,
+      })
+    otherMerchantId = other.body.id as string
+  })
+
+  it('auto-links the merchant to the registering user', async () => {
+    const res = await request(app)
+      .get('/api/v1/merchants/me')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+    expect(res.body.id).toBe(myMerchantId)
+  })
+
+  it('updates its own merchant data', async () => {
+    const res = await request(app)
+      .put('/api/v1/merchants/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ monthlyRevenue: 21000, yearsInBusiness: 6 })
+    expect(res.status).toBe(200)
+    expect(res.body.monthlyRevenue).toBe(21000)
+    expect(res.body.yearsInBusiness).toBe(6)
+  })
+
+  it('evaluates a credit application for its own merchant', async () => {
+    const res = await request(app)
+      .post('/api/v1/credit-applications')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ merchantId: myMerchantId, requestedAmount: 5000 })
+    expect(res.status).toBe(201)
+    expect(res.body.merchantId).toBe(myMerchantId)
+    expect(res.body.status).toMatch(/^(APPROVED|REJECTED)$/)
+  })
+
+  it('is forbidden from evaluating another merchant', async () => {
+    const res = await request(app)
+      .post('/api/v1/credit-applications')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ merchantId: otherMerchantId, requestedAmount: 5000 })
+    expect(res.status).toBe(403)
+    expect(res.body.error.code).toBe('FORBIDDEN')
+  })
+
+  it('only lists its own applications', async () => {
+    const res = await request(app)
+      .get('/api/v1/credit-applications')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+    for (const application of res.body as Array<{ merchantId: string }>) {
+      expect(application.merchantId).toBe(myMerchantId)
+    }
+  })
+
+  it('is forbidden from listing all merchants', async () => {
+    const res = await request(app)
+      .get('/api/v1/merchants')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(403)
+  })
+})
+
+describe('Admin merchant listing', () => {
+  it('lists all merchants for an admin', async () => {
+    const token = await login()
+    const res = await request(app)
+      .get('/api/v1/merchants')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body)).toBe(true)
+  })
+})
+
+describe('CORS', () => {
+  it('reflects the configured origin', async () => {
+    const corsApp = createApp({ corsOrigin: 'https://example.com' })
+    const res = await request(corsApp)
+      .get('/healthz')
+      .set('Origin', 'https://example.com')
+    expect(res.status).toBe(200)
+    expect(res.headers['access-control-allow-origin']).toBe('https://example.com')
+  })
+
+  it('rejects origins not allowed', async () => {
+    const corsApp = createApp({ corsOrigin: 'https://example.com' })
+    const res = await request(corsApp)
+      .get('/healthz')
+      .set('Origin', 'https://evil.com')
+    expect(res.status).toBe(200)
+    expect(res.headers['access-control-allow-origin']).toBeUndefined()
+  })
+})
+
 afterAll(async () => {
   await prisma.creditApplication.deleteMany({
     where: { merchant: { is: { phone: { startsWith: phonePrefix } } } },
   })
   await prisma.merchant.deleteMany({ where: { phone: { startsWith: phonePrefix } } })
+  await prisma.user.deleteMany({ where: { email: { startsWith: userEmailPrefix } } })
   await prisma.$disconnect()
 })

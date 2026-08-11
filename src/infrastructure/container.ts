@@ -9,8 +9,12 @@ import { EvaluateCreditApplicationUseCaseImpl } from '../application/use-cases/e
 import type { EvaluateCreditApplicationUseCase } from '../application/use-cases/evaluate-credit-application.use-case.js'
 import { RegisterMerchantUseCaseImpl } from '../application/use-cases/register-merchant.use-case.js'
 import type { RegisterMerchantUseCase } from '../application/use-cases/register-merchant.use-case.js'
-import { LoginUseCaseImpl } from '../application/use-cases/login.use-case.js'
-import type { LoginUseCase } from '../application/use-cases/login.use-case.js'
+import { GetMyMerchantUseCaseImpl } from '../application/use-cases/get-my-merchant.use-case.js'
+import type { GetMyMerchantUseCase } from '../application/use-cases/get-my-merchant.use-case.js'
+import { UpdateMerchantUseCaseImpl } from '../application/use-cases/update-merchant.use-case.js'
+import type { UpdateMerchantUseCase } from '../application/use-cases/update-merchant.use-case.js'
+import { LoginUseCaseImpl, RegisterUserUseCaseImpl } from '../application/use-cases/login.use-case.js'
+import type { LoginUseCase, RegisterUserUseCase } from '../application/use-cases/login.use-case.js'
 import {
   GetCreditApplicationUseCaseImpl,
   ListCreditApplicationsUseCaseImpl,
@@ -27,7 +31,7 @@ import { MockScoringService } from './ai/mock-scoring.service.js'
 import { JwtTokenService } from './auth/jwt-token.service.js'
 import { PasswordService } from './auth/password.service.js'
 
-const merchantRepository: MerchantRepository = new PrismaMerchantRepository()
+export const merchantRepository: MerchantRepository = new PrismaMerchantRepository()
 const creditApplicationRepository: CreditApplicationRepository =
   new PrismaCreditApplicationRepository()
 const userRepository: UserRepository = new PrismaUserRepository()
@@ -37,7 +41,7 @@ export function createAIScoringService(): IAIScoringService {
 }
 
 const aiScoringService = createAIScoringService()
-const tokenService: ITokenService = new JwtTokenService()
+export const tokenService: ITokenService = new JwtTokenService()
 const passwordService: IPasswordService = new PasswordService()
 
 export const evaluateCreditApplicationUseCase: EvaluateCreditApplicationUseCase =
@@ -51,7 +55,21 @@ export const registerMerchantUseCase: RegisterMerchantUseCase = new RegisterMerc
   merchantRepository,
 )
 
+export const getMyMerchantUseCase: GetMyMerchantUseCase = new GetMyMerchantUseCaseImpl(
+  merchantRepository,
+)
+
+export const updateMerchantUseCase: UpdateMerchantUseCase = new UpdateMerchantUseCaseImpl(
+  merchantRepository,
+)
+
 export const loginUseCase: LoginUseCase = new LoginUseCaseImpl(
+  userRepository,
+  passwordService,
+  tokenService,
+)
+
+export const registerUserUseCase: RegisterUserUseCase = new RegisterUserUseCaseImpl(
   userRepository,
   passwordService,
   tokenService,
@@ -62,5 +80,3 @@ export const getCreditApplicationUseCase: GetCreditApplicationUseCase =
 
 export const listCreditApplicationsUseCase: ListCreditApplicationsUseCase =
   new ListCreditApplicationsUseCaseImpl(creditApplicationRepository)
-
-export { tokenService }
