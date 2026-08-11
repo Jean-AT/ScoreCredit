@@ -2,6 +2,17 @@
 
 Motor de scoring crediticio orientado a bodegas y comercios de barrio. Evalúa solicitudes de crédito mediante modelos de IA, asigna un puntaje de riesgo (0–100) y produce una decisión operativa (APPROVED/REJECTED) junto con el monto aprobado y una justificación en lenguaje natural.
 
+## Descripción del proyecto
+
+| Área | Detalle |
+| --- | --- |
+| Producto | Plataforma de scoring crediticio para bodegas |
+| Aplicación | Backend API (REST) |
+| Frontend web | [Jean-AT/ScoreCreditWebApp](https://github.com/Jean-AT/ScoreCreditWebApp) |
+| Despliegue | Render Web Service |
+| API de producción | https://bodegascore-api.onrender.com |
+| Web desplegada | https://bodegascore-web.onrender.com/ |
+
 ## Resumen ejecutivo
 
 ```
